@@ -7,7 +7,10 @@ A CLI tool that extracts contacts from Mac Contacts and iPhone, then finds match
 ## Features
 
 - 📇 Extract contacts from Mac Contacts app
-- 🔍 Search LinkedIn for matching profiles
+- 🔍 **Enhanced multi-source search**
+  - Google search to find LinkedIn profile URLs
+  - **LinkedIn profile scraping** with Playwright to extract detailed info (name, headline, company, location)
+  - Optional Google Custom Search API for more reliable results
 - 🎯 **Enhanced matching algorithm** with Jaro-Winkler similarity
   - Smart name matching with nickname recognition (Bill ↔ William)
   - Advanced company matching with abbreviation handling (IBM ↔ International Business Machines)
@@ -18,6 +21,7 @@ A CLI tool that extracts contacts from Mac Contacts and iPhone, then finds match
 - 📝 Generate markdown report with detailed match reasons
 - 🔗 Clickable LinkedIn profile URLs
 - ⚙️ Flexible matching algorithm selection (Levenshtein or Jaro-Winkler)
+- 💾 Smart caching to avoid redundant searches
 
 ## Prerequisites
 
@@ -55,13 +59,90 @@ pnpm start -- -i contacts.vcf -o results.md -l 5 --min-score 60
 pnpm dev
 ```
 
+## Optional: Google Custom Search API Setup
+
+For more reliable search results, you can optionally configure Google Custom Search API. This provides better quality results than web scraping alone.
+
+### Why Use Google Custom Search API?
+
+- **More Reliable**: Official API with better uptime than web scraping
+- **Better Results**: More accurate search results
+- **Rate Limits**: Higher rate limits for production use
+- **Free Tier**: 100 queries/day free (sufficient for most use cases)
+
+### Setup Instructions
+
+#### 1. Get Google Custom Search API Key
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the **Custom Search API**:
+   - Navigate to "APIs & Services" → "Library"
+   - Search for "Custom Search API"
+   - Click "Enable"
+4. Create credentials:
+   - Go to "APIs & Services" → "Credentials"
+   - Click "Create Credentials" → "API Key"
+   - Copy your API key
+
+#### 2. Create Custom Search Engine
+
+1. Go to [Google Programmable Search Engine](https://programmablesearchengine.google.com/)
+2. Click "Add" or "Get Started"
+3. Configure your search engine:
+   - **Sites to search**: Enter `linkedin.com/in/*`
+   - **Name**: Give it a descriptive name (e.g., "LinkedIn Profile Search")
+4. Click "Create"
+5. In the search engine settings:
+   - Copy your **Search Engine ID** (looks like `abc123...`)
+   - Under "Search Features", enable "Search the entire web"
+
+#### 3. Configure the Tool
+
+Option 1: Environment variables (recommended)
+```bash
+export GOOGLE_API_KEY="your-api-key-here"
+export GOOGLE_SEARCH_ENGINE_ID="your-search-engine-id"
+
+pnpm start -- -i contacts.vcf
+```
+
+Option 2: Command line options
+```bash
+pnpm start -- -i contacts.vcf \
+  --google-api-key "your-api-key-here" \
+  --google-search-engine-id "your-search-engine-id"
+```
+
+Option 3: Add to your shell profile (`.bashrc`, `.zshrc`, etc.)
+```bash
+echo 'export GOOGLE_API_KEY="your-api-key-here"' >> ~/.zshrc
+echo 'export GOOGLE_SEARCH_ENGINE_ID="your-search-engine-id"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Fallback Behavior
+
+If Google Custom Search API is not configured or fails:
+- The tool automatically falls back to web scraping
+- No configuration required for basic usage
+- LinkedIn profile scraping still provides detailed information
+
 ## How It Works
 
 1. **Extract**: Reads contacts from Mac Contacts or exported vCard files
-2. **Search**: Uses Google search to find LinkedIn profiles
-3. **Match**: Scores potential matches based on name, company, location, job title
-4. **Rank**: Orders matches by confidence score
-5. **Output**: Generates markdown file with top 3 matches per contact
+2. **Search**: Uses enhanced multi-source search strategy
+   - Performs Google search to find LinkedIn profile URLs
+   - Scrapes LinkedIn profiles to extract detailed information (name, headline, company, location)
+   - Optional: Uses Google Custom Search API for more reliable results
+3. **Match**: Scores potential matches based on:
+   - Email address (highest priority)
+   - Name similarity with nickname recognition
+   - Company matching with abbreviations
+   - Location matching
+   - Job title alignment
+4. **Rank**: Orders matches by confidence score with detailed breakdowns
+5. **Output**: Generates markdown file with top matches per contact
 
 ## Output Example
 
@@ -102,6 +183,11 @@ Basic Options:
   -h, --help                 Display help
   -V, --version              Display version
 
+Search API Options (Optional):
+  --google-api-key <key>              Google Custom Search API key for enhanced results
+  --google-search-engine-id <id>     Google Custom Search Engine ID
+                                     (Can also use GOOGLE_API_KEY and GOOGLE_SEARCH_ENGINE_ID env vars)
+
 Advanced Matching Options:
   --algorithm <type>         Matching algorithm: levenshtein or jaro-winkler (default: jaro-winkler)
   --email-weight <number>    Weight for email matching (default: 50)
@@ -116,7 +202,17 @@ Advanced Matching Options:
 ### Examples
 
 ```bash
-# Basic usage with default settings
+# Basic usage with default settings (uses web scraping)
+phone-to-linkedin -i contacts.vcf
+
+# Use Google Custom Search API for better results
+phone-to-linkedin -i contacts.vcf \
+  --google-api-key "your-key" \
+  --google-search-engine-id "your-id"
+
+# Or with environment variables
+export GOOGLE_API_KEY="your-key"
+export GOOGLE_SEARCH_ENGINE_ID="your-id"
 phone-to-linkedin -i contacts.vcf
 
 # Higher quality matches only
@@ -149,7 +245,8 @@ phone-to-linkedin -i contacts.vcf \
   --algorithm jaro-winkler \
   --name-weight 35 \
   --email-weight 40 \
-  --min-score 50
+  --min-score 50 \
+  --google-api-key "your-key"
 ```
 
 ## Implementation Plan
@@ -183,8 +280,15 @@ This tool is for personal use only. Be aware that:
   - [x] Job title synonym recognition
   - [x] Configurable scoring weights
   - [x] Detailed score breakdown in match reasons
-- [ ] Phase 3: Profile verification
-- [ ] Phase 4: Polish and production features
+- [x] **Phase 3: Enhanced Search Sources** 🚀
+  - [x] Multi-source search strategy
+  - [x] LinkedIn profile web scraping with Playwright
+  - [x] Extract detailed profile information (name, headline, company, location)
+  - [x] Google Custom Search API integration (optional)
+  - [x] Automatic fallback from API to web scraping
+  - [x] Smart rate limiting and delays
+- [ ] Phase 4: Profile verification
+- [ ] Phase 5: Polish and production features
 
 ## License
 
