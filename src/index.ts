@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { createCLI, parseCLIOptions } from './cli.js';
+import { PhoneToLinkedInApp } from './app.js';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 
@@ -57,21 +58,9 @@ async function main() {
       }
     }
 
-    console.log('\n📝 Implementation Status:');
-    console.log('  This is a preliminary version with CLI setup complete.');
-    console.log('  Core functionality (contact parsing, LinkedIn search, matching) is in development.');
-    console.log('\n✓ CLI defaults are optimized for the most common use case:');
-    console.log('  • Input: vCard file (exported from Mac Contacts)');
-    console.log('  • Output: Markdown report (linkedin-matches.md)');
-    console.log('  • Top 3 matches per contact');
-    console.log('  • Minimum score: 40 (filters low-confidence matches)');
-    console.log('  • Cache enabled (avoids redundant searches)');
-
-    // TODO: Implement core functionality
-    // 1. Parse vCard files
-    // 2. Search LinkedIn via Google
-    // 3. Match and score profiles
-    // 4. Generate markdown output
+    // Run the application
+    const app = new PhoneToLinkedInApp();
+    await app.run(options);
   });
 
   await program.parseAsync(process.argv);
