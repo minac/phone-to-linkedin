@@ -15,14 +15,23 @@ A CLI tool that extracts contacts from Mac Contacts and WhatsApp, then finds mat
 ## Quick Start
 
 ```bash
-# Install dependencies
+# 1. Export contacts from Mac Contacts app:
+#    - Open Contacts.app
+#    - Select contacts (Cmd+A for all)
+#    - File → Export → Export vCard...
+#    - Save as contacts.vcf
+
+# 2. Install dependencies
 npm install
 
-# Run the CLI
+# 3. Run with default settings (optimized for common use case)
+npm start -- -i contacts.vcf
+
+# Or simply place contacts.vcf in the current directory and run:
 npm start
 
-# Or with options
-npm start -- --source contacts --output results.md --limit 3
+# Advanced usage with custom options
+npm start -- -i contacts.vcf -o results.md -l 5 --min-score 60
 ```
 
 ## How It Works
@@ -47,16 +56,51 @@ npm start -- --source contacts --output results.md --limit 3
 
 ## CLI Options
 
+**Optimized Defaults** - The CLI is pre-configured for the most common use case:
+- ✅ **Input**: vCard file (recommended - simply export from Contacts.app)
+- ✅ **Output**: `linkedin-matches.md` (clean markdown report)
+- ✅ **Matches**: Top 3 per contact (optimal for review)
+- ✅ **Min Score**: 40 (filters out low-confidence matches)
+- ✅ **Cache**: Enabled by default (avoids redundant searches)
+
 ```
 Options:
-  -s, --source <sources>    Contact sources (contacts,whatsapp) (default: "contacts")
-  -o, --output <file>       Output markdown file (default: "linkedin-matches.md")
-  -l, --limit <number>      Number of matches per contact (default: "3")
-  -m, --min-score <number>  Minimum match score (default: "40")
-  -f, --filter <name>       Filter contacts by name
-  --dry-run                 Show what would be searched without executing
-  --use-cache               Use cached search results
-  -h, --help                Display help
+  -i, --input <files...>     Input contact files (vCard, JSON, WhatsApp chat)
+                             If not specified, looks for contacts.vcf in current directory
+  --format <type>            Input format: vcard, json, whatsapp-chat (auto-detected)
+  -s, --source <sources>     Contact sources for direct extraction (contacts,whatsapp)
+                             Requires system permissions (default: "contacts")
+  -o, --output <file>        Output markdown file (default: "linkedin-matches.md")
+  -l, --limit <number>       Number of matches per contact (default: 3)
+  -m, --min-score <number>   Minimum match score 0-100 (default: 40)
+  -f, --filter <name>        Filter contacts by name (partial match)
+  --dry-run                  Show what would be searched without executing
+  --use-cache                Use cached search results (default: enabled)
+  --no-cache                 Disable cache and force fresh searches
+  -h, --help                 Display help
+  -V, --version              Display version
+```
+
+### Examples
+
+```bash
+# Basic usage with default settings
+phone-to-linkedin -i contacts.vcf
+
+# Higher quality matches only
+phone-to-linkedin -i contacts.vcf --min-score 60
+
+# More matches per contact
+phone-to-linkedin -i contacts.vcf -l 5
+
+# Filter specific contacts
+phone-to-linkedin -i contacts.vcf -f "John"
+
+# Dry run to preview what will be searched
+phone-to-linkedin -i contacts.vcf --dry-run
+
+# Force fresh searches without cache
+phone-to-linkedin -i contacts.vcf --no-cache
 ```
 
 ## Implementation Plan
@@ -80,6 +124,7 @@ This tool is for personal use only. Be aware that:
 ## Development Roadmap
 
 - [x] Phase 0: Planning and architecture
+- [x] CLI setup with optimized defaults
 - [ ] Phase 1: MVP with Mac Contacts + Google search
 - [ ] Phase 2: Enhanced matching algorithm
 - [ ] Phase 3: WhatsApp integration
