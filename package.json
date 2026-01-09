@@ -1,7 +1,7 @@
 {
   "name": "phone-to-linkedin",
-  "version": "1.0.0",
-  "description": "CLI tool to extract contacts from Mac Contacts and WhatsApp, then search LinkedIn to find matching profiles",
+  "version": "0.1.0",
+  "description": "A CLI tool that extracts contacts from Mac Contacts and iPhone, then finds matching LinkedIn profiles",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
@@ -9,15 +9,14 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/index.ts",
-    "start": "node dist/index.js",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "linkedin",
     "contacts",
     "cli",
-    "whatsapp",
     "mac-contacts",
     "networking"
   ],

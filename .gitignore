@@ -39,8 +39,12 @@ tmp/
 
 # Output files
 linkedin-matches.md
+linkedin-matches-*.md
 *.vcf
 contacts.json
+
+# Database files
+*.sqlite
 
 # Test coverage
 coverage/

@@ -1,6 +1,8 @@
 # Quick Guide: Exporting Contacts for phone-to-linkedin
 
-This guide shows you how to export contacts from Mac Contacts and WhatsApp to use with phone-to-linkedin.
+This guide shows you how to export contacts from Mac Contacts to use with phone-to-linkedin.
+
+**Note about WhatsApp**: WhatsApp reads contacts directly from your iPhone's contact list, so there's no need to export from WhatsApp separately. Just export your iPhone contacts and you'll have all your WhatsApp contacts included.
 
 ## Mac Contacts Export (Recommended)
 
@@ -28,52 +30,6 @@ end tell' > ~/Desktop/contacts.vcf
 ```
 
 This will save all contacts to `contacts.vcf` on your Desktop.
-
-## WhatsApp Contacts Export
-
-WhatsApp doesn't have a built-in bulk export feature. Here are your options:
-
-### Option 1: Export from iPhone/Android (Best Method)
-
-Since WhatsApp syncs contacts from your phone:
-
-**On iPhone:**
-1. Go to **Settings** → **[Your Name]** → **iCloud**
-2. Enable **Contacts** sync
-3. Go to [iCloud.com](https://www.icloud.com) on your Mac
-4. Click **Contacts**
-5. Select all contacts (`Cmd+A`)
-6. Click the gear icon → **Export vCard**
-7. Save the file
-
-**On Android:**
-1. Open **Contacts** app
-2. Tap **Menu** (three dots) → **Settings**
-3. Tap **Export**
-4. Choose **Export to .vcf file**
-5. Save to a location accessible from your Mac (e.g., Google Drive)
-
-### Option 2: Export Individual WhatsApp Chats
-
-For a smaller subset of contacts:
-
-1. Open **WhatsApp** on Mac
-2. Select a chat
-3. Click **three dots** (⋮) → **Export Chat**
-4. Choose **Without Media**
-5. Save as `.txt` file
-6. Repeat for other chats
-
-Note: This gives you a chat export with phone numbers, not a full contact list.
-
-### Option 3: Access WhatsApp Database (Advanced)
-
-WhatsApp stores data in:
-```
-~/Library/Application Support/WhatsApp/
-```
-
-However, most files are encrypted and not easily accessible.
 
 ## Using Exported Files with phone-to-linkedin
 
@@ -142,10 +98,10 @@ Each contact is a separate `VCARD` block in the file.
 - Open the file in a text editor to verify it contains `BEGIN:VCARD` entries
 - Try exporting again from Contacts.app
 
-### WhatsApp Contacts Not Showing
-- Remember: WhatsApp uses your phone's contacts
-- Export from your phone's native Contacts app instead
-- The contacts will include all your WhatsApp contacts automatically
+### Need WhatsApp Contacts?
+- WhatsApp uses your phone's native contact list
+- Export from your iPhone/Android Contacts app using the methods above
+- Your exported contacts will automatically include all WhatsApp contacts
 
 ## Privacy Note
 
