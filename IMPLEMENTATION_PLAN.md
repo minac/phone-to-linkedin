@@ -3,6 +3,12 @@
 ## Overview
 A CLI application that extracts contacts from Mac Contacts and WhatsApp, then searches LinkedIn to find matching profiles. Outputs a markdown file with the top 3 most likely profile matches for each contact.
 
+**Key Features:**
+- **Simplified Input**: Supports exported vCard files from Mac Contacts (no direct app integration needed)
+- **Email-First Matching**: Prioritizes email matching (50 points) over name matching (30 points) for higher accuracy
+- **Smart Scoring**: Uses name (30), company (15), location (10), and job title (5) for comprehensive matching
+- **Multiple Input Formats**: vCard, JSON, and WhatsApp chat exports
+
 ## Architecture
 
 ### Technology Stack
@@ -13,6 +19,127 @@ A CLI application that extracts contacts from Mac Contacts and WhatsApp, then se
 - **Web Scraping**: Playwright or Puppeteer (with proxy rotation)
 - **Matching**: String similarity algorithms (Levenshtein distance, fuzzy matching)
 - **Output**: Markdown generation with clickable links
+
+## Exporting Contacts to Files (Simplified Approach)
+
+Before implementing programmatic extraction, you can manually export contacts to files:
+
+### Mac Contacts Export
+
+**Method 1: Using Contacts App (Recommended)**
+1. Open **Contacts.app**
+2. Select the contacts you want to export:
+   - `Cmd+A` to select all contacts
+   - Or manually select specific contacts
+3. Go to **File** → **Export** → **Export vCard...**
+4. Save as `contacts.vcf`
+5. The vCard file contains all contact information in a standard format
+
+**Method 2: Command Line Export**
+```bash
+# Export all contacts to vCard format
+contacts -H -l | while read -r id; do
+  contacts -H -m -i "$id"
+done > contacts.vcf
+
+# Or use this simpler approach
+osascript -e 'tell application "Contacts"
+  set allPeople to every person
+  repeat with aPerson in allPeople
+    set vCardData to vcard of aPerson
+    return vCardData
+  end repeat
+end tell' > contacts.vcf
+```
+
+**vCard Format Example:**
+```
+BEGIN:VCARD
+VERSION:3.0
+N:Doe;John;;;
+FN:John Doe
+ORG:Acme Corp
+TITLE:Software Engineer
+EMAIL;TYPE=WORK:john.doe@acme.com
+TEL;TYPE=CELL:+1-555-123-4567
+ADR;TYPE=WORK:;;123 Main St;San Francisco;CA;94101;USA
+END:VCARD
+```
+
+### WhatsApp Contacts Export
+
+**Important**: WhatsApp doesn't provide a direct contact export feature, but here are workarounds:
+
+**Method 1: Export Individual Chats (Limited)**
+1. Open **WhatsApp** on Mac
+2. Select a chat
+3. Click the three dots → **Export Chat**
+4. Choose **Without Media**
+5. Save as `.txt` file
+6. The file contains phone numbers and names in the chat
+
+**Method 2: Access WhatsApp Database (Advanced)**
+```bash
+# WhatsApp stores data in SQLite database
+# Location: ~/Library/Application Support/WhatsApp/
+
+# The database is encrypted, but you can view the structure
+cd ~/Library/Application\ Support/WhatsApp/
+ls -la
+
+# Main database files:
+# - ChatStorage.sqlite (encrypted)
+# - Contacts.db (may contain contact info)
+
+# If Contacts.db is accessible (not encrypted):
+sqlite3 Contacts.db ".schema"
+sqlite3 Contacts.db "SELECT * FROM contacts;"
+```
+
+**Method 3: Sync from Phone (Easiest)**
+Since WhatsApp contacts are actually stored on your iPhone/Android:
+1. On iPhone: **Settings** → **Contacts** → **Export Contacts** (via iCloud)
+2. Download contacts.vcf from iCloud.com
+3. These contacts include WhatsApp contacts already
+
+**Method 4: Use WhatsApp Web Export**
+- WhatsApp doesn't officially support bulk contact export
+- Contacts are synced from your phone's address book
+- **Recommendation**: Export from your phone's native contacts app instead
+
+### Parsing Exported Files
+
+The CLI can support multiple input formats:
+
+```bash
+# Parse vCard file
+phone-to-linkedin --input contacts.vcf
+
+# Parse WhatsApp chat export
+phone-to-linkedin --input whatsapp-export.txt --format whatsapp-chat
+
+# Parse JSON (if converted)
+phone-to-linkedin --input contacts.json --format json
+```
+
+**Implementation:**
+```typescript
+class ContactParser {
+  parseVCard(filePath: string): Contact[] {
+    // Parse vCard format (RFC 6350)
+    // Libraries: vcard-parser, vcard4
+  }
+
+  parseWhatsAppChat(filePath: string): Contact[] {
+    // Extract phone numbers and names from chat export
+    // Format: "[Date] Name: Message"
+  }
+
+  parseJSON(filePath: string): Contact[] {
+    // Parse custom JSON format
+  }
+}
+```
 
 ## Components
 
@@ -152,36 +279,57 @@ class ContactMatcher {
   scoreMatch(contact: Contact, profile: LinkedInProfile): number {
     let score = 0;
 
-    // Name similarity (0-40 points)
+    // Email domain match (0-50 points) - HIGHEST PRIORITY
+    // Email is the strongest signal for identity matching
+    if (contact.emails.length && profile.email) {
+      score += this.emailMatchScore(contact.emails, profile.email);
+    }
+
+    // Name similarity (0-30 points)
     score += this.nameMatchScore(contact.fullName, profile.name);
 
-    // Company match (0-25 points)
+    // Company match (0-15 points)
     if (contact.company && profile.company) {
       score += this.companyMatchScore(contact.company, profile.company);
     }
 
-    // Location match (0-15 points)
+    // Location match (0-10 points)
     if (contact.location && profile.location) {
       score += this.locationMatchScore(contact.location, profile.location);
     }
 
-    // Job title similarity (0-10 points)
+    // Job title similarity (0-5 points)
     if (contact.jobTitle && profile.headline) {
       score += this.titleMatchScore(contact.jobTitle, profile.headline);
-    }
-
-    // Email domain match (0-10 points)
-    if (contact.emails.length && profile.email) {
-      score += this.emailMatchScore(contact.emails, profile.email);
     }
 
     return score;
   }
 
+  private emailMatchScore(contactEmails: string[], profileEmail: string): number {
+    // Exact email match: 50 points
+    for (const email of contactEmails) {
+      if (email.toLowerCase() === profileEmail.toLowerCase()) {
+        return 50;
+      }
+    }
+
+    // Same domain match: 25 points
+    const profileDomain = profileEmail.split('@')[1]?.toLowerCase();
+    for (const email of contactEmails) {
+      const contactDomain = email.split('@')[1]?.toLowerCase();
+      if (contactDomain && profileDomain && contactDomain === profileDomain) {
+        return 25;
+      }
+    }
+
+    return 0;
+  }
+
   private nameMatchScore(name1: string, name2: string): number {
     // Use Levenshtein distance or Jaro-Winkler
     const similarity = stringSimilarity(name1, name2);
-    return similarity * 40;
+    return similarity * 30;
   }
 }
 ```
@@ -251,14 +399,23 @@ Generated: 2026-01-09
 ### 5. CLI Interface
 
 ```bash
-# Basic usage
+# Basic usage (extract from Mac Contacts)
 phone-to-linkedin
+
+# Use exported vCard file (RECOMMENDED - simpler approach)
+phone-to-linkedin --input contacts.vcf
+
+# Use multiple input files
+phone-to-linkedin --input contacts.vcf --input whatsapp-export.txt
 
 # With options
 phone-to-linkedin --source contacts,whatsapp --output results.md --limit 3 --min-score 40
 
 # Filter by name
 phone-to-linkedin --filter "John Doe"
+
+# Specify input format
+phone-to-linkedin --input contacts.vcf --format vcard
 
 # Dry run (show what would be searched)
 phone-to-linkedin --dry-run
@@ -272,7 +429,9 @@ phone-to-linkedin --use-cache
 program
   .name('phone-to-linkedin')
   .description('Find LinkedIn profiles for your contacts')
-  .option('-s, --source <sources>', 'Contact sources (contacts,whatsapp)', 'contacts')
+  .option('-i, --input <files...>', 'Input contact files (vCard, JSON, WhatsApp chat)')
+  .option('--format <type>', 'Input format: vcard, json, whatsapp-chat (auto-detected if not specified)')
+  .option('-s, --source <sources>', 'Contact sources (contacts,whatsapp) - for direct extraction', 'contacts')
   .option('-o, --output <file>', 'Output markdown file', 'linkedin-matches.md')
   .option('-l, --limit <number>', 'Number of matches per contact', '3')
   .option('-m, --min-score <number>', 'Minimum match score', '40')
@@ -389,6 +548,7 @@ program
 {
   "dependencies": {
     "commander": "^11.1.0",
+    "vcard-parser": "^2.0.0",
     "playwright": "^1.40.0",
     "cheerio": "^1.0.0-rc.12",
     "string-similarity": "^4.0.4",
