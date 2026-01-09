@@ -1,13 +1,15 @@
 # Phone-to-LinkedIn CLI App - Implementation Plan
 
 ## Overview
-A CLI application that extracts contacts from Mac Contacts and WhatsApp, then searches LinkedIn to find matching profiles. Outputs a markdown file with the top 3 most likely profile matches for each contact.
+A CLI application that extracts contacts from Mac Contacts and iPhone, then searches LinkedIn to find matching profiles. Outputs a markdown file with the top 3 most likely profile matches for each contact.
+
+**Note**: WhatsApp contacts don't need separate handling since WhatsApp reads from your iPhone's native contact list.
 
 **Key Features:**
 - **Simplified Input**: Supports exported vCard files from Mac Contacts (no direct app integration needed)
 - **Email-First Matching**: Prioritizes email matching (50 points) over name matching (30 points) for higher accuracy
 - **Smart Scoring**: Uses name (30), company (15), location (10), and job title (5) for comprehensive matching
-- **Multiple Input Formats**: vCard, JSON, and WhatsApp chat exports
+- **Multiple Input Formats**: vCard and JSON
 
 ## Architecture
 
@@ -66,46 +68,7 @@ ADR;TYPE=WORK:;;123 Main St;San Francisco;CA;94101;USA
 END:VCARD
 ```
 
-### WhatsApp Contacts Export
-
-**Important**: WhatsApp doesn't provide a direct contact export feature, but here are workarounds:
-
-**Method 1: Export Individual Chats (Limited)**
-1. Open **WhatsApp** on Mac
-2. Select a chat
-3. Click the three dots → **Export Chat**
-4. Choose **Without Media**
-5. Save as `.txt` file
-6. The file contains phone numbers and names in the chat
-
-**Method 2: Access WhatsApp Database (Advanced)**
-```bash
-# WhatsApp stores data in SQLite database
-# Location: ~/Library/Application Support/WhatsApp/
-
-# The database is encrypted, but you can view the structure
-cd ~/Library/Application\ Support/WhatsApp/
-ls -la
-
-# Main database files:
-# - ChatStorage.sqlite (encrypted)
-# - Contacts.db (may contain contact info)
-
-# If Contacts.db is accessible (not encrypted):
-sqlite3 Contacts.db ".schema"
-sqlite3 Contacts.db "SELECT * FROM contacts;"
-```
-
-**Method 3: Sync from Phone (Easiest)**
-Since WhatsApp contacts are actually stored on your iPhone/Android:
-1. On iPhone: **Settings** → **Contacts** → **Export Contacts** (via iCloud)
-2. Download contacts.vcf from iCloud.com
-3. These contacts include WhatsApp contacts already
-
-**Method 4: Use WhatsApp Web Export**
-- WhatsApp doesn't officially support bulk contact export
-- Contacts are synced from your phone's address book
-- **Recommendation**: Export from your phone's native contacts app instead
+**Note about WhatsApp**: Since WhatsApp reads contacts from your iPhone's native contact list, exporting your iPhone contacts will automatically include all WhatsApp contacts. There's no need for separate WhatsApp export.
 
 ### Parsing Exported Files
 
@@ -114,9 +77,6 @@ The CLI can support multiple input formats:
 ```bash
 # Parse vCard file
 phone-to-linkedin --input contacts.vcf
-
-# Parse WhatsApp chat export
-phone-to-linkedin --input whatsapp-export.txt --format whatsapp-chat
 
 # Parse JSON (if converted)
 phone-to-linkedin --input contacts.json --format json
@@ -128,11 +88,6 @@ class ContactParser {
   parseVCard(filePath: string): Contact[] {
     // Parse vCard format (RFC 6350)
     // Libraries: vcard-parser, vcard4
-  }
-
-  parseWhatsAppChat(filePath: string): Contact[] {
-    // Extract phone numbers and names from chat export
-    // Format: "[Date] Name: Message"
   }
 
   parseJSON(filePath: string): Contact[] {
@@ -175,21 +130,7 @@ class MacContactsReader {
 }
 ```
 
-#### 1.2 WhatsApp Contacts Reader
-**Challenges:**
-- WhatsApp stores contacts in encrypted SQLite database
-- Location: `~/Library/Application Support/WhatsApp/Databases/`
-- Database is encrypted with user's key
-
-**Approach Options:**
-- **Option A**: Read from WhatsApp.app's contact cache (if accessible)
-- **Option B**: Parse WhatsApp chat exports
-- **Option C**: Use WhatsApp Web automation (Puppeteer)
-- **Option D**: Skip WhatsApp initially due to encryption complexity
-
-**Recommended**: Start with Option D (Mac Contacts only), add WhatsApp in Phase 2
-
-#### 1.3 Contact Data Model
+#### 1.2 Contact Data Model
 ```typescript
 interface Contact {
   id: string;
@@ -201,7 +142,7 @@ interface Contact {
   company?: string;
   jobTitle?: string;
   location?: string;
-  source: 'mac-contacts' | 'whatsapp';
+  source: 'mac-contacts' | 'iphone-contacts';
   raw: any; // Original data for reference
 }
 ```
@@ -406,10 +347,10 @@ phone-to-linkedin
 phone-to-linkedin --input contacts.vcf
 
 # Use multiple input files
-phone-to-linkedin --input contacts.vcf --input whatsapp-export.txt
+phone-to-linkedin --input contacts.vcf --input iphone-contacts.vcf
 
 # With options
-phone-to-linkedin --source contacts,whatsapp --output results.md --limit 3 --min-score 40
+phone-to-linkedin --source contacts --output results.md --limit 3 --min-score 40
 
 # Filter by name
 phone-to-linkedin --filter "John Doe"
@@ -429,9 +370,9 @@ phone-to-linkedin --use-cache
 program
   .name('phone-to-linkedin')
   .description('Find LinkedIn profiles for your contacts')
-  .option('-i, --input <files...>', 'Input contact files (vCard, JSON, WhatsApp chat)')
-  .option('--format <type>', 'Input format: vcard, json, whatsapp-chat (auto-detected if not specified)')
-  .option('-s, --source <sources>', 'Contact sources (contacts,whatsapp) - for direct extraction', 'contacts')
+  .option('-i, --input <files...>', 'Input contact files (vCard, JSON)')
+  .option('--format <type>', 'Input format: vcard, json (auto-detected if not specified)')
+  .option('-s, --source <sources>', 'Contact sources (contacts) - for direct extraction', 'contacts')
   .option('-o, --output <file>', 'Output markdown file', 'linkedin-matches.md')
   .option('-l, --limit <number>', 'Number of matches per contact', '3')
   .option('-m, --min-score <number>', 'Minimum match score', '40')
@@ -475,16 +416,7 @@ program
 5. Confidence levels in output
 6. Match reason explanations
 
-### Phase 3: WhatsApp Integration
-**Goal**: Add WhatsApp as a contact source
-
-**Tasks:**
-1. Research WhatsApp data access methods
-2. Implement chosen approach (likely Web automation)
-3. Merge contacts from multiple sources
-4. Deduplicate contacts
-
-### Phase 4: Profile Verification
+### Phase 3: Profile Verification
 **Goal**: Optionally scrape LinkedIn profiles for better matching
 
 **Tasks:**
@@ -494,7 +426,7 @@ program
 4. Extract profile details for scoring
 5. Cache profile data
 
-### Phase 5: Polish & Features
+### Phase 4: Polish & Features
 **Goal**: Production-ready application
 
 **Tasks:**
@@ -574,7 +506,6 @@ phone-to-linkedin/
 │   ├── cli.ts                   # Command definitions
 │   ├── contacts/
 │   │   ├── mac-contacts.ts      # Mac Contacts reader
-│   │   ├── whatsapp.ts          # WhatsApp reader
 │   │   ├── types.ts             # Contact data types
 │   │   └── parser.ts            # Contact data parser
 │   ├── linkedin/
@@ -669,7 +600,6 @@ Instead of full automation:
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | LinkedIn blocks requests | High | Use Google search, add delays, rotate IPs |
-| WhatsApp data inaccessible | Medium | Skip WhatsApp, focus on Mac Contacts |
 | Low match accuracy | Medium | Implement robust scoring algorithm |
 | macOS permission denied | High | Clear permission prompts, fallback options |
 | Rate limit violations | Medium | Conservative limits, caching, backoff |
