@@ -38,20 +38,38 @@ WhatsApp doesn't have a built-in bulk export feature. Here are your options:
 Since WhatsApp syncs contacts from your phone:
 
 **On iPhone:**
-1. Go to **Settings** → **[Your Name]** → **iCloud**
-2. Enable **Contacts** sync
-3. Go to [iCloud.com](https://www.icloud.com) on your Mac
-4. Click **Contacts**
-5. Select all contacts (`Cmd+A`)
-6. Click the gear icon → **Export vCard**
-7. Save the file
+
+**Option A: If you already have iCloud sync enabled on your Mac**
+1. Open **Contacts.app** on your Mac (your iPhone contacts should already be there)
+2. Press `Cmd+A` to select all contacts
+3. Go to **File** → **Export** → **Export vCard...**
+4. Save the file - you're done!
+
+**Option B: Using iCloud.com**
+1. On your iPhone, go to **Settings** → **[Your Name]** (at the very top with your photo)
+2. Tap **iCloud**
+3. Turn on the **Contacts** toggle (if it's not already on)
+4. Wait 2-5 minutes for contacts to sync to iCloud
+5. On your Mac (or any computer), open a web browser
+6. Go to [iCloud.com](https://www.icloud.com)
+7. Sign in with your Apple ID and password
+8. Click on **Contacts** (the address book icon)
+9. Click any contact, then press `Cmd+A` (or Ctrl+A on Windows) to select all
+10. Click the **gear icon** (⚙️) at the bottom left corner
+11. Select **Export vCard...**
+12. Save the `vCard.vcf` file to your Mac
 
 **On Android:**
-1. Open **Contacts** app
-2. Tap **Menu** (three dots) → **Settings**
-3. Tap **Export**
-4. Choose **Export to .vcf file**
-5. Save to a location accessible from your Mac (e.g., Google Drive)
+1. Open the **Contacts** or **People** app on your phone
+2. Tap the **Menu** button (three horizontal lines ☰ or three dots ⋮)
+3. Look for **Settings**, **Manage contacts**, or **Import/Export**
+4. Tap **Export** or **Export contacts**
+5. Choose **Export to .vcf file** or **Export to storage**
+6. Select a save location:
+   - **Internal storage/Downloads** (then transfer via USB)
+   - **Google Drive** (easiest - access from any computer)
+   - **Email** (send to yourself)
+7. On your Mac, download the file from where you saved it
 
 ### Option 2: Export Individual WhatsApp Chats
 
@@ -133,6 +151,20 @@ Each contact is a separate `VCARD` block in the file.
 
 ## Troubleshooting
 
+### iPhone: Can't Find iCloud Export Option
+- Make sure you're signed in to iCloud on your iPhone (Settings → [Your Name])
+- The Contacts toggle must be ON in iCloud settings
+- After enabling, wait 5-10 minutes for the initial sync
+- If still not syncing, try: Settings → [Your Name] → iCloud → toggle Contacts OFF then back ON
+- Check your Mac's Contacts.app - if iPhone contacts appear there, you can export directly from the Mac
+
+### iPhone: Contacts Not Syncing to iCloud
+- Go to Settings → [Your Name] → iCloud → turn off Contacts, wait 10 seconds, turn back on
+- Make sure you have iCloud storage available
+- Check your internet connection
+- Try restarting your iPhone
+- Alternative: Export directly from Mac Contacts.app if you use the same Apple ID
+
 ### "Permission Denied" Error
 - Make sure the exported file is readable
 - Try moving the file to your Desktop or home directory
@@ -146,6 +178,7 @@ Each contact is a separate `VCARD` block in the file.
 - Remember: WhatsApp uses your phone's contacts
 - Export from your phone's native Contacts app instead
 - The contacts will include all your WhatsApp contacts automatically
+- WhatsApp doesn't have a separate contact database - it reads from your phone's address book
 
 ## Privacy Note
 

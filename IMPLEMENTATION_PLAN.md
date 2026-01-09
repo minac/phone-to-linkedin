@@ -98,9 +98,25 @@ sqlite3 Contacts.db "SELECT * FROM contacts;"
 
 **Method 3: Sync from Phone (Easiest)**
 Since WhatsApp contacts are actually stored on your iPhone/Android:
-1. On iPhone: **Settings** → **Contacts** → **Export Contacts** (via iCloud)
-2. Download contacts.vcf from iCloud.com
-3. These contacts include WhatsApp contacts already
+
+**On iPhone:**
+1. Go to **Settings** → **[Your Name]** (at the top) → **iCloud**
+2. Enable **Contacts** toggle (turn it on if it's off)
+3. Wait a few minutes for contacts to sync
+4. On your Mac, open a browser and go to [iCloud.com](https://icloud.com)
+5. Sign in with your Apple ID
+6. Click **Contacts**
+7. Select all contacts: Click one contact, then press `Cmd+A`
+8. Click the gear icon (⚙️) at bottom left → **Export vCard...**
+9. Save the `contacts.vcf` file
+
+**On Android:**
+1. Open the **Contacts** or **People** app
+2. Tap the **Menu** (three lines or dots) → **Settings** or **Manage contacts**
+3. Tap **Import/Export** or **Export**
+4. Choose **Export to .vcf file** or **Export to storage**
+5. Select where to save (Downloads, Google Drive, etc.)
+6. Transfer the file to your Mac via USB, Google Drive, or email
 
 **Method 4: Use WhatsApp Web Export**
 - WhatsApp doesn't officially support bulk contact export
