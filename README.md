@@ -1,3 +1,5 @@
+# 🚧🚧🚧 APPROACH DID NOT WORK, LINKEDIN TOO RESTRICTIVE, SHUTTING DOWN 🚧🚧🚧
+
 # phone-to-linkedin
 
 A CLI tool that extracts contacts from Mac Contacts and iPhone, then finds matching LinkedIn profiles.
