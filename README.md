@@ -13,6 +13,17 @@ A CLI tool that extracts contacts from Mac Contacts and iPhone, then finds match
 - 📝 Generate markdown report with top 3 matches per contact
 - 🔗 Clickable LinkedIn profile URLs
 
+## Prerequisites
+
+This project uses **pnpm** as the package manager for faster installs and better disk efficiency.
+
+Install pnpm if you haven't already:
+```bash
+npm install -g pnpm
+# or
+brew install pnpm
+```
+
 ## Quick Start
 
 ```bash
@@ -22,17 +33,20 @@ A CLI tool that extracts contacts from Mac Contacts and iPhone, then finds match
 #    - File → Export → Export vCard...
 #    - Save as contacts.vcf
 
-# 2. Install dependencies
-npm install
+# 2. Install dependencies (2-3x faster than npm!)
+pnpm install
 
 # 3. Run with default settings (optimized for common use case)
-npm start -- -i contacts.vcf
+pnpm start -- -i contacts.vcf
 
 # Or simply place contacts.vcf in the current directory and run:
-npm start
+pnpm start
 
 # Advanced usage with custom options
-npm start -- -i contacts.vcf -o results.md -l 5 --min-score 60
+pnpm start -- -i contacts.vcf -o results.md -l 5 --min-score 60
+
+# Development mode
+pnpm dev
 ```
 
 ## How It Works

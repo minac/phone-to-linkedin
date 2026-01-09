@@ -1,10 +1,51 @@
+# Dependencies
 node_modules/
+
+# pnpm
+.pnpm-store/
+pnpm-lock.yaml
+
+# Build output
 dist/
-*.log
-.DS_Store
+build/
+*.tsbuildinfo
+
+# Environment variables
 .env
-*.vcf
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Cache
+.cache/
+.temp/
+tmp/
+
+# Output files
 linkedin-matches.md
 linkedin-matches-*.md
-.cache/
+*.vcf
+contacts.json
+
+# Database files
 *.sqlite
+
+# Test coverage
+coverage/
+.nyc_output/
