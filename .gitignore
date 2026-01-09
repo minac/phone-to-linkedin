@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# pnpm
+.pnpm-store/
+pnpm-lock.yaml
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Cache
+.cache/
+.temp/
+tmp/
+
+# Output files
+linkedin-matches.md
+*.vcf
+contacts.json
+
+# Test coverage
+coverage/
+.nyc_output/

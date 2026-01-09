@@ -12,17 +12,31 @@ A CLI tool that extracts contacts from Mac Contacts and WhatsApp, then finds mat
 - 📝 Generate markdown report with top 3 matches per contact
 - 🔗 Clickable LinkedIn profile URLs
 
+## Prerequisites
+
+This project uses **pnpm** as the package manager for faster installs and better disk efficiency.
+
+Install pnpm if you haven't already:
+```bash
+npm install -g pnpm
+# or
+brew install pnpm
+```
+
 ## Quick Start
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies (2-3x faster than npm!)
+pnpm install
 
 # Run the CLI
-npm start
+pnpm start
 
 # Or with options
-npm start -- --source contacts --output results.md --limit 3
+pnpm start --source contacts --output results.md --limit 3
+
+# Development mode
+pnpm dev
 ```
 
 ## How It Works
