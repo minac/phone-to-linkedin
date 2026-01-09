@@ -7,6 +7,7 @@ import { MarkdownGenerator, ContactWithMatches } from './output/markdown.js';
 import { CacheManager } from './cache/cache-manager.js';
 import { CLIOptions } from './cli.js';
 import { Contact } from './contacts/types.js';
+import { createMatchingConfig } from './matching/config.js';
 
 export class PhoneToLinkedInApp {
   private parser: ContactParser;
@@ -24,12 +25,53 @@ export class PhoneToLinkedInApp {
   }
 
   /**
+   * Configure the matcher with CLI options
+   */
+  private configureMatcher(options: CLIOptions): void {
+    const config = createMatchingConfig({
+      algorithm: options.algorithm,
+      weights: {
+        email: options.emailWeight ?? 50,
+        name: options.nameWeight ?? 30,
+        company: options.companyWeight ?? 15,
+        location: options.locationWeight ?? 10,
+        jobTitle: options.jobTitleWeight ?? 5,
+      },
+      nameThreshold: options.nameThreshold ?? 0.7,
+      companyThreshold: options.companyThreshold ?? 0.6,
+    });
+
+    this.matcher.setConfig(config);
+
+    // Log matching configuration if any custom weights are set
+    const hasCustomWeights =
+      options.algorithm ||
+      options.emailWeight ||
+      options.nameWeight ||
+      options.companyWeight ||
+      options.locationWeight ||
+      options.jobTitleWeight ||
+      options.nameThreshold ||
+      options.companyThreshold;
+
+    if (hasCustomWeights) {
+      console.log(chalk.cyan('Matching Configuration:'));
+      console.log(chalk.gray(`  Algorithm: ${config.algorithm}`));
+      console.log(chalk.gray(`  Weights: Email=${config.weights.email}, Name=${config.weights.name}, Company=${config.weights.company}, Location=${config.weights.location}, JobTitle=${config.weights.jobTitle}`));
+      console.log(chalk.gray(`  Thresholds: Name=${config.nameThreshold}, Company=${config.companyThreshold}\n`));
+    }
+  }
+
+  /**
    * Main application flow
    */
   async run(options: CLIOptions): Promise<void> {
     console.log(chalk.cyan('\n🚀 Starting Phone-to-LinkedIn search...\n'));
 
     try {
+      // Configure matching algorithm
+      this.configureMatcher(options);
+
       // Step 1: Parse contacts
       const contacts = await this.parseContacts(options);
       console.log(chalk.green(`✓ Parsed ${contacts.length} contacts\n`));

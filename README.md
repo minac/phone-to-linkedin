@@ -8,10 +8,16 @@ A CLI tool that extracts contacts from Mac Contacts and iPhone, then finds match
 
 - 📇 Extract contacts from Mac Contacts app
 - 🔍 Search LinkedIn for matching profiles
-- 🎯 Smart matching algorithm using name, company, location, job title
-- 📊 Score-based ranking of matches
-- 📝 Generate markdown report with top 3 matches per contact
+- 🎯 **Enhanced matching algorithm** with Jaro-Winkler similarity
+  - Smart name matching with nickname recognition (Bill ↔ William)
+  - Advanced company matching with abbreviation handling (IBM ↔ International Business Machines)
+  - Location matching with abbreviations (SF ↔ San Francisco)
+  - Job title synonym recognition (Engineer ↔ Developer)
+- 📊 Score-based ranking with detailed breakdowns
+- 🎨 **Configurable weights** for custom scoring priorities
+- 📝 Generate markdown report with detailed match reasons
 - 🔗 Clickable LinkedIn profile URLs
+- ⚙️ Flexible matching algorithm selection (Levenshtein or Jaro-Winkler)
 
 ## Prerequisites
 
@@ -77,9 +83,10 @@ pnpm dev
 - ✅ **Matches**: Top 3 per contact (optimal for review)
 - ✅ **Min Score**: 40 (filters out low-confidence matches)
 - ✅ **Cache**: Enabled by default (avoids redundant searches)
+- ✅ **Algorithm**: Jaro-Winkler (better for name matching)
 
 ```
-Options:
+Basic Options:
   -i, --input <files...>     Input contact files (vCard, JSON, WhatsApp chat)
                              If not specified, looks for contacts.vcf in current directory
   --format <type>            Input format: vcard, json, whatsapp-chat (auto-detected)
@@ -94,6 +101,16 @@ Options:
   --no-cache                 Disable cache and force fresh searches
   -h, --help                 Display help
   -V, --version              Display version
+
+Advanced Matching Options:
+  --algorithm <type>         Matching algorithm: levenshtein or jaro-winkler (default: jaro-winkler)
+  --email-weight <number>    Weight for email matching (default: 50)
+  --name-weight <number>     Weight for name matching (default: 30)
+  --company-weight <number>  Weight for company matching (default: 15)
+  --location-weight <number> Weight for location matching (default: 10)
+  --job-title-weight <number> Weight for job title matching (default: 5)
+  --name-threshold <number>  Minimum name similarity threshold 0-1 (default: 0.7)
+  --company-threshold <number> Minimum company similarity threshold 0-1 (default: 0.6)
 ```
 
 ### Examples
@@ -116,6 +133,23 @@ phone-to-linkedin -i contacts.vcf --dry-run
 
 # Force fresh searches without cache
 phone-to-linkedin -i contacts.vcf --no-cache
+
+# Advanced matching options
+# Prioritize company matches over name matches
+phone-to-linkedin -i contacts.vcf --name-weight 20 --company-weight 25
+
+# Use Levenshtein algorithm instead of Jaro-Winkler
+phone-to-linkedin -i contacts.vcf --algorithm levenshtein
+
+# Require stricter name matching
+phone-to-linkedin -i contacts.vcf --name-threshold 0.85
+
+# Combine multiple custom options
+phone-to-linkedin -i contacts.vcf \
+  --algorithm jaro-winkler \
+  --name-weight 35 \
+  --email-weight 40 \
+  --min-score 50
 ```
 
 ## Implementation Plan
@@ -141,7 +175,14 @@ This tool is for personal use only. Be aware that:
 - [x] Phase 0: Planning and architecture
 - [x] CLI setup with optimized defaults
 - [x] Phase 1: MVP with Mac Contacts + Google search
-- [ ] Phase 2: Enhanced matching algorithm
+- [x] **Phase 2: Enhanced matching algorithm** ✨
+  - [x] Jaro-Winkler algorithm implementation
+  - [x] Advanced fuzzy matching with nickname recognition
+  - [x] Enhanced company matching with abbreviations
+  - [x] Smart location matching with US state codes
+  - [x] Job title synonym recognition
+  - [x] Configurable scoring weights
+  - [x] Detailed score breakdown in match reasons
 - [ ] Phase 3: Profile verification
 - [ ] Phase 4: Polish and production features
 

@@ -1,8 +1,40 @@
-import { distance } from 'fastest-levenshtein';
 import { Contact } from '../contacts/types.js';
 import { LinkedInProfile, Match } from '../linkedin/types.js';
+import { MatchingConfig, DEFAULT_MATCHING_CONFIG } from './config.js';
+import {
+  matchNames,
+  matchCompanies,
+  matchLocations,
+  matchJobTitles,
+  areNameVariations,
+} from './fuzzy.js';
+
+/**
+ * Detailed score breakdown for a match
+ */
+interface ScoreBreakdown {
+  email: number;
+  name: number;
+  company: number;
+  location: number;
+  jobTitle: number;
+  total: number;
+}
 
 export class ContactMatcher {
+  private config: MatchingConfig;
+
+  constructor(config: MatchingConfig = DEFAULT_MATCHING_CONFIG) {
+    this.config = config;
+  }
+
+  /**
+   * Update the matching configuration
+   */
+  setConfig(config: MatchingConfig): void {
+    this.config = config;
+  }
+
   /**
    * Match a contact with LinkedIn profiles and return scored matches
    */
@@ -10,9 +42,9 @@ export class ContactMatcher {
     const matches: Match[] = [];
 
     for (const profile of profiles) {
-      const score = this.scoreMatch(contact, profile);
-      const matchReasons = this.getMatchReasons(contact, profile, score);
-      const confidenceLevel = this.getConfidenceLevel(score);
+      const breakdown = this.scoreMatch(contact, profile);
+      const matchReasons = this.getMatchReasons(contact, profile, breakdown);
+      const confidenceLevel = this.getConfidenceLevel(breakdown.total);
 
       matches.push({
         contact,
@@ -21,7 +53,7 @@ export class ContactMatcher {
         profileHeadline: profile.headline,
         profileCompany: profile.company,
         profileLocation: profile.location,
-        score,
+        score: breakdown.total,
         matchReasons,
         confidenceLevel,
       });
@@ -34,54 +66,71 @@ export class ContactMatcher {
   }
 
   /**
-   * Score a match between a contact and a LinkedIn profile
+   * Score a match between a contact and a LinkedIn profile with detailed breakdown
    */
-  private scoreMatch(contact: Contact, profile: LinkedInProfile): number {
-    let score = 0;
+  private scoreMatch(contact: Contact, profile: LinkedInProfile): ScoreBreakdown {
+    const breakdown: ScoreBreakdown = {
+      email: 0,
+      name: 0,
+      company: 0,
+      location: 0,
+      jobTitle: 0,
+      total: 0,
+    };
 
-    // Email domain match (0-50 points) - HIGHEST PRIORITY
+    // Email match (0-50 points by default) - HIGHEST PRIORITY
     if (contact.emails.length && profile.email) {
-      score += this.emailMatchScore(contact.emails, profile.email);
+      breakdown.email = this.emailMatchScore(contact.emails, profile.email);
     }
 
-    // Name similarity (0-30 points)
-    score += this.nameMatchScore(contact.fullName, profile.name);
+    // Name similarity (0-30 points by default)
+    breakdown.name = this.nameMatchScore(contact.fullName, profile.name);
 
-    // Company match (0-15 points)
+    // Company match (0-15 points by default)
     if (contact.company && profile.company) {
-      score += this.companyMatchScore(contact.company, profile.company);
+      breakdown.company = this.companyMatchScore(contact.company, profile.company);
     }
 
-    // Location match (0-10 points)
+    // Location match (0-10 points by default)
     if (contact.location && profile.location) {
-      score += this.locationMatchScore(contact.location, profile.location);
+      breakdown.location = this.locationMatchScore(contact.location, profile.location);
     }
 
-    // Job title/headline similarity (0-5 points)
+    // Job title/headline similarity (0-5 points by default)
     if (contact.jobTitle && profile.headline) {
-      score += this.titleMatchScore(contact.jobTitle, profile.headline);
+      breakdown.jobTitle = this.titleMatchScore(contact.jobTitle, profile.headline);
     }
 
-    return Math.round(score);
+    breakdown.total = Math.round(
+      breakdown.email +
+        breakdown.name +
+        breakdown.company +
+        breakdown.location +
+        breakdown.jobTitle
+    );
+
+    return breakdown;
   }
 
   /**
    * Calculate email match score
    */
   private emailMatchScore(contactEmails: string[], profileEmail: string): number {
-    // Exact email match: 50 points
+    const maxScore = this.config.weights.email;
+
+    // Exact email match: full points
     for (const email of contactEmails) {
       if (email.toLowerCase() === profileEmail.toLowerCase()) {
-        return 50;
+        return maxScore;
       }
     }
 
-    // Same domain match: 25 points
+    // Same domain match: half points
     const profileDomain = profileEmail.split('@')[1]?.toLowerCase();
     for (const email of contactEmails) {
       const contactDomain = email.split('@')[1]?.toLowerCase();
       if (contactDomain && profileDomain && contactDomain === profileDomain) {
-        return 25;
+        return maxScore * 0.5;
       }
     }
 
@@ -89,95 +138,61 @@ export class ContactMatcher {
   }
 
   /**
-   * Calculate name match score using string similarity
+   * Calculate name match score using enhanced fuzzy matching
    */
   private nameMatchScore(name1: string, name2: string): number {
     if (!name1 || !name2) return 0;
 
-    const similarity = this.stringSimilarity(
-      name1.toLowerCase().trim(),
-      name2.toLowerCase().trim()
-    );
+    const similarity = matchNames(name1, name2, this.config.algorithm);
+    const maxScore = this.config.weights.name;
 
-    return similarity * 30;
+    // Apply threshold
+    if (similarity < this.config.nameThreshold) {
+      return 0;
+    }
+
+    return similarity * maxScore;
   }
 
   /**
-   * Calculate company match score
+   * Calculate company match score using enhanced matching
    */
   private companyMatchScore(company1: string, company2: string): number {
     if (!company1 || !company2) return 0;
 
-    // Normalize company names
-    const norm1 = this.normalizeCompanyName(company1);
-    const norm2 = this.normalizeCompanyName(company2);
+    const similarity = matchCompanies(company1, company2, this.config.algorithm);
+    const maxScore = this.config.weights.company;
 
-    if (norm1 === norm2) {
-      return 15;
+    // Apply threshold
+    if (similarity < this.config.companyThreshold) {
+      return 0;
     }
 
-    const similarity = this.stringSimilarity(norm1, norm2);
-    return similarity * 15;
+    return similarity * maxScore;
   }
 
   /**
-   * Calculate location match score
+   * Calculate location match score using enhanced matching
    */
   private locationMatchScore(location1: string, location2: string): number {
     if (!location1 || !location2) return 0;
 
-    const norm1 = location1.toLowerCase().trim();
-    const norm2 = location2.toLowerCase().trim();
+    const similarity = matchLocations(location1, location2, this.config.algorithm);
+    const maxScore = this.config.weights.location;
 
-    // Check if one location contains the other
-    if (norm1.includes(norm2) || norm2.includes(norm1)) {
-      return 10;
-    }
-
-    const similarity = this.stringSimilarity(norm1, norm2);
-    return similarity * 10;
+    return similarity * maxScore;
   }
 
   /**
-   * Calculate job title match score
+   * Calculate job title match score using enhanced matching
    */
   private titleMatchScore(title: string, headline: string): number {
     if (!title || !headline) return 0;
 
-    const norm1 = title.toLowerCase().trim();
-    const norm2 = headline.toLowerCase().trim();
+    const similarity = matchJobTitles(title, headline, this.config.algorithm);
+    const maxScore = this.config.weights.jobTitle;
 
-    // Check if headline contains the title
-    if (norm2.includes(norm1)) {
-      return 5;
-    }
-
-    const similarity = this.stringSimilarity(norm1, norm2);
-    return similarity * 5;
-  }
-
-  /**
-   * Calculate string similarity using Levenshtein distance
-   * Returns a value between 0 and 1
-   */
-  private stringSimilarity(str1: string, str2: string): number {
-    const maxLength = Math.max(str1.length, str2.length);
-    if (maxLength === 0) return 1;
-
-    const dist = distance(str1, str2);
-    return 1 - dist / maxLength;
-  }
-
-  /**
-   * Normalize company name for comparison
-   */
-  private normalizeCompanyName(company: string): string {
-    return company
-      .toLowerCase()
-      .trim()
-      .replace(/\b(inc|llc|ltd|corp|corporation|company|co)\b\.?/g, '')
-      .replace(/[^\w\s]/g, '')
-      .trim();
+    return similarity * maxScore;
   }
 
   /**
@@ -192,65 +207,106 @@ export class ContactMatcher {
   }
 
   /**
-   * Generate match reasons for display
+   * Generate detailed match reasons with score breakdown
    */
   private getMatchReasons(
     contact: Contact,
     profile: LinkedInProfile,
-    score: number
+    breakdown: ScoreBreakdown
   ): string[] {
     const reasons: string[] = [];
 
-    // Check email match
-    if (contact.emails.length && profile.email) {
-      for (const email of contact.emails) {
-        if (email.toLowerCase() === profile.email.toLowerCase()) {
-          reasons.push('Exact email match');
-          break;
-        }
+    // Email match details
+    if (breakdown.email > 0) {
+      const emailScore = Math.round(breakdown.email);
+      if (breakdown.email >= this.config.weights.email) {
+        reasons.push(`✓ Exact email match (+${emailScore} points)`);
+      } else {
+        reasons.push(`✓ Same email domain (+${emailScore} points)`);
       }
     }
 
-    // Check name similarity
-    const nameSimilarity = this.stringSimilarity(
-      contact.fullName.toLowerCase(),
-      profile.name.toLowerCase()
-    );
-    if (nameSimilarity > 0.9) {
-      reasons.push('Exact name match');
-    } else if (nameSimilarity > 0.7) {
-      reasons.push(`Similar name (${Math.round(nameSimilarity * 100)}% match)`);
-    }
+    // Name match details
+    if (breakdown.name > 0) {
+      const nameScore = Math.round(breakdown.name);
+      const nameSimilarity = matchNames(contact.fullName, profile.name, this.config.algorithm);
 
-    // Check company match
-    if (contact.company && profile.company) {
-      const norm1 = this.normalizeCompanyName(contact.company);
-      const norm2 = this.normalizeCompanyName(profile.company);
-      if (norm1 === norm2) {
-        reasons.push(`Company match: ${contact.company}`);
+      // Check for name variations
+      const parts1 = contact.fullName.toLowerCase().split(/\s+/);
+      const parts2 = profile.name.toLowerCase().split(/\s+/);
+      const hasVariation =
+        parts1.length > 0 &&
+        parts2.length > 0 &&
+        areNameVariations(parts1[0], parts2[0]);
+
+      if (nameSimilarity >= 0.95) {
+        reasons.push(`✓ Exact name match (+${nameScore} points)`);
+      } else if (hasVariation) {
+        reasons.push(
+          `✓ Name variation match: ${contact.fullName} ↔ ${profile.name} (+${nameScore} points)`
+        );
+      } else {
+        const percentage = Math.round(nameSimilarity * 100);
+        reasons.push(`✓ Similar name (${percentage}% match, +${nameScore} points)`);
       }
     }
 
-    // Check location match
-    if (contact.location && profile.location) {
-      const norm1 = contact.location.toLowerCase();
-      const norm2 = profile.location.toLowerCase();
-      if (norm1.includes(norm2) || norm2.includes(norm1)) {
-        reasons.push(`Location match: ${contact.location}`);
+    // Company match details
+    if (breakdown.company > 0) {
+      const companyScore = Math.round(breakdown.company);
+      const companySimilarity = matchCompanies(
+        contact.company!,
+        profile.company!,
+        this.config.algorithm
+      );
+
+      if (companySimilarity >= 0.95) {
+        reasons.push(`✓ Company match: ${contact.company} (+${companyScore} points)`);
+      } else {
+        const percentage = Math.round(companySimilarity * 100);
+        reasons.push(`✓ Similar company (${percentage}% match, +${companyScore} points)`);
       }
     }
 
-    // Check job title
-    if (contact.jobTitle && profile.headline) {
-      const norm1 = contact.jobTitle.toLowerCase();
-      const norm2 = profile.headline.toLowerCase();
-      if (norm2.includes(norm1)) {
-        reasons.push(`Job title match: ${contact.jobTitle}`);
+    // Location match details
+    if (breakdown.location > 0) {
+      const locationScore = Math.round(breakdown.location);
+      const locationSimilarity = matchLocations(
+        contact.location!,
+        profile.location!,
+        this.config.algorithm
+      );
+
+      if (locationSimilarity >= 0.9) {
+        reasons.push(`✓ Location match: ${contact.location} (+${locationScore} points)`);
+      } else {
+        const percentage = Math.round(locationSimilarity * 100);
+        reasons.push(`✓ Similar location (${percentage}% match, +${locationScore} points)`);
       }
     }
 
-    if (reasons.length === 0) {
-      reasons.push('Partial match based on available data');
+    // Job title match details
+    if (breakdown.jobTitle > 0) {
+      const titleScore = Math.round(breakdown.jobTitle);
+      const titleSimilarity = matchJobTitles(
+        contact.jobTitle!,
+        profile.headline!,
+        this.config.algorithm
+      );
+
+      if (titleSimilarity >= 0.9) {
+        reasons.push(`✓ Job title match (+${titleScore} points)`);
+      } else {
+        const percentage = Math.round(titleSimilarity * 100);
+        reasons.push(`✓ Similar job title (${percentage}% match, +${titleScore} points)`);
+      }
+    }
+
+    // Add score breakdown summary
+    if (reasons.length > 0) {
+      reasons.push(`Total Score: ${breakdown.total}/110 points`);
+    } else {
+      reasons.push('Low confidence match - minimal similarity found');
     }
 
     return reasons;
