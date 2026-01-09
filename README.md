@@ -1,11 +1,12 @@
 # phone-to-linkedin
 
-A CLI tool that extracts contacts from Mac Contacts and WhatsApp, then finds matching LinkedIn profiles.
+A CLI tool that extracts contacts from Mac Contacts and iPhone, then finds matching LinkedIn profiles.
+
+**Note**: WhatsApp contacts don't need separate export since WhatsApp reads from your iPhone's contact list.
 
 ## Features
 
 - 📇 Extract contacts from Mac Contacts app
-- 💬 Extract contacts from WhatsApp (planned)
 - 🔍 Search LinkedIn for matching profiles
 - 🎯 Smart matching algorithm using name, company, location, job title
 - 📊 Score-based ranking of matches
@@ -36,7 +37,7 @@ npm start -- -i contacts.vcf -o results.md -l 5 --min-score 60
 
 ## How It Works
 
-1. **Extract**: Reads contacts from Mac Contacts (and optionally WhatsApp)
+1. **Extract**: Reads contacts from Mac Contacts or exported vCard files
 2. **Search**: Uses Google search to find LinkedIn profiles
 3. **Match**: Scores potential matches based on name, company, location, job title
 4. **Rank**: Orders matches by confidence score
@@ -127,9 +128,8 @@ This tool is for personal use only. Be aware that:
 - [x] CLI setup with optimized defaults
 - [ ] Phase 1: MVP with Mac Contacts + Google search
 - [ ] Phase 2: Enhanced matching algorithm
-- [ ] Phase 3: WhatsApp integration
-- [ ] Phase 4: Profile verification
-- [ ] Phase 5: Polish and production features
+- [ ] Phase 3: Profile verification
+- [ ] Phase 4: Polish and production features
 
 ## License
 
