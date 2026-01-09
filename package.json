@@ -1,0 +1,39 @@
+{
+  "name": "phone-to-linkedin",
+  "version": "0.1.0",
+  "description": "A CLI tool that extracts contacts from Mac Contacts and WhatsApp, then finds matching LinkedIn profiles",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "phone-to-linkedin": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "linkedin",
+    "contacts",
+    "cli",
+    "networking"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "vcard-parser": "^2.0.0",
+    "cheerio": "^1.0.0-rc.12",
+    "string-similarity": "^4.0.4",
+    "cli-progress": "^3.12.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0"
+  }
+}
