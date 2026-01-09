@@ -25,7 +25,7 @@
   "packageManager": "pnpm@10.25.0",
   "pnpm": {
     "overrides": {
-      "whatwg-encoding": "npm:@exodus/bytes@^1.8.0"
+      "whatwg-encoding": "^3.1.1"
     }
   },
   "dependencies": {
