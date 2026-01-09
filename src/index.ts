@@ -18,6 +18,10 @@ async function main() {
     console.log(`  Minimum score: ${options.minScore}`);
     console.log(`  Use cache: ${options.useCache ? 'Yes' : 'No'}`);
 
+    if (options.googleApiKey && options.googleSearchEngineId) {
+      console.log(`  Google Custom Search API: Enabled`);
+    }
+
     if (options.filter) {
       console.log(`  Filter: ${options.filter}`);
     }
@@ -59,7 +63,7 @@ async function main() {
     }
 
     // Run the application
-    const app = new PhoneToLinkedInApp();
+    const app = new PhoneToLinkedInApp(options.googleApiKey, options.googleSearchEngineId);
     await app.run(options);
   });
 

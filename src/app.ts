@@ -16,9 +16,9 @@ export class PhoneToLinkedInApp {
   private generator: MarkdownGenerator;
   private cache: CacheManager;
 
-  constructor() {
+  constructor(googleApiKey?: string, googleSearchEngineId?: string) {
     this.parser = new ContactParser();
-    this.searcher = new LinkedInSearcher();
+    this.searcher = new LinkedInSearcher(googleApiKey, googleSearchEngineId);
     this.matcher = new ContactMatcher();
     this.generator = new MarkdownGenerator();
     this.cache = new CacheManager();

@@ -11,6 +11,9 @@ export interface CLIOptions {
   filter?: string;
   dryRun: boolean;
   useCache: boolean;
+  // Search API options
+  googleApiKey?: string;
+  googleSearchEngineId?: string;
   // Advanced matching options
   algorithm?: 'levenshtein' | 'jaro-winkler';
   emailWeight?: number;
@@ -81,6 +84,15 @@ export function createCLI() {
       '--no-cache',
       'Disable cache and force fresh searches'
     )
+    // Search API options
+    .option(
+      '--google-api-key <key>',
+      'Google Custom Search API key for enhanced search results (optional)'
+    )
+    .option(
+      '--google-search-engine-id <id>',
+      'Google Custom Search Engine ID (required if using API key)'
+    )
     // Advanced matching options
     .option(
       '--algorithm <type>',
@@ -132,6 +144,9 @@ export function parseCLIOptions(program: Command): CLIOptions {
     dryRun: options.dryRun || false,
     // Handle --use-cache (default true) and --no-cache
     useCache: options.cache !== false,
+    // Search API options
+    googleApiKey: options.googleApiKey || process.env.GOOGLE_API_KEY,
+    googleSearchEngineId: options.googleSearchEngineId || process.env.GOOGLE_SEARCH_ENGINE_ID,
     // Advanced matching options
     algorithm: options.algorithm as 'levenshtein' | 'jaro-winkler' | undefined,
     emailWeight: options.emailWeight ? parseFloat(options.emailWeight) : undefined,
