@@ -11,6 +11,15 @@ export interface CLIOptions {
   filter?: string;
   dryRun: boolean;
   useCache: boolean;
+  // Advanced matching options
+  algorithm?: 'levenshtein' | 'jaro-winkler';
+  emailWeight?: number;
+  nameWeight?: number;
+  companyWeight?: number;
+  locationWeight?: number;
+  jobTitleWeight?: number;
+  nameThreshold?: number;
+  companyThreshold?: number;
 }
 
 export function createCLI() {
@@ -71,6 +80,39 @@ export function createCLI() {
     .option(
       '--no-cache',
       'Disable cache and force fresh searches'
+    )
+    // Advanced matching options
+    .option(
+      '--algorithm <type>',
+      'Matching algorithm: levenshtein or jaro-winkler (default: jaro-winkler)'
+    )
+    .option(
+      '--email-weight <number>',
+      'Weight for email matching (default: 50)'
+    )
+    .option(
+      '--name-weight <number>',
+      'Weight for name matching (default: 30)'
+    )
+    .option(
+      '--company-weight <number>',
+      'Weight for company matching (default: 15)'
+    )
+    .option(
+      '--location-weight <number>',
+      'Weight for location matching (default: 10)'
+    )
+    .option(
+      '--job-title-weight <number>',
+      'Weight for job title matching (default: 5)'
+    )
+    .option(
+      '--name-threshold <number>',
+      'Minimum name similarity threshold 0-1 (default: 0.7)'
+    )
+    .option(
+      '--company-threshold <number>',
+      'Minimum company similarity threshold 0-1 (default: 0.6)'
     );
 
   return program;
@@ -90,5 +132,14 @@ export function parseCLIOptions(program: Command): CLIOptions {
     dryRun: options.dryRun || false,
     // Handle --use-cache (default true) and --no-cache
     useCache: options.cache !== false,
+    // Advanced matching options
+    algorithm: options.algorithm as 'levenshtein' | 'jaro-winkler' | undefined,
+    emailWeight: options.emailWeight ? parseFloat(options.emailWeight) : undefined,
+    nameWeight: options.nameWeight ? parseFloat(options.nameWeight) : undefined,
+    companyWeight: options.companyWeight ? parseFloat(options.companyWeight) : undefined,
+    locationWeight: options.locationWeight ? parseFloat(options.locationWeight) : undefined,
+    jobTitleWeight: options.jobTitleWeight ? parseFloat(options.jobTitleWeight) : undefined,
+    nameThreshold: options.nameThreshold ? parseFloat(options.nameThreshold) : undefined,
+    companyThreshold: options.companyThreshold ? parseFloat(options.companyThreshold) : undefined,
   };
 }
